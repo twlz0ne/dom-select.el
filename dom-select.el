@@ -1,4 +1,4 @@
-;;; dom-select.el --- Select DOM elements using CSS-style selector -*- lexical-binding: t; -*-
+;;; dom-select.el --- CSS-style selector based on dom.el -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2020 Gong Qijian <gongqijian@gmail.com>
 
@@ -24,7 +24,7 @@
 
 ;;; Commentary:
 
-;; Select DOM elements using CSS-style selector.
+;; CSS-style selector based on dom.el.
 ;;
 ;; ## Requirement
 ;;

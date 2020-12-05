@@ -2,7 +2,7 @@
 
 # dom-select.el
 
-Select DOM elements using CSS-style selector.
+CSS-style selector based on dom.el.
 
 ## Requirement
 
@@ -32,7 +32,7 @@ Supported selectors and combinators:
 | `#id`                 | `#firstname`       | Select all elements with `id="firstname"`                                        |
 | `tag`                 | `p`                | Select all `<p>` elements                                                        |
 | `[attr=fullstring]`   | `[target=_blank]`  | Select all elements with `target="_blank"`                                       |
-| `[attr|=prefix]`      | `[lang|=en]`       | Select all elements with a lang attribute value equals "en" or starts with "en-" |
+| `[attr\|=prefix]`     | `[lang\|=en]`      | Select all elements with a lang attribute value equals "en" or starts with "en-" |
 | `[attr~=word]`        | `[title~=flower]`  | Select all elements with title attribute containing the word "flower"            |
 | `[attr^=prefix]`      | `a[href^=https]`   | Select every `<a>` element whose href attribute value begins with "https"        |
 | `[attr*=substring]`   | `a[href*=example]` | Select every `<a>` element whose href attribute value contains "example"         |
