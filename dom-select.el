@@ -117,7 +117,7 @@ or starts with WORD followed by a hyphen (-)."
 PREDICATE is called with the node as its only parameter.")
 
 
-;;; Selector functions
+;;; Parse selectors
 
 (defsubst dom-select--extract-tag (string)
   "Extract tag from STRING.
@@ -136,10 +136,10 @@ Example:
 Example:
 
   (dom-select--extract-id \"div#foo\")
-  ;; => foo"
+  ;; => \"foo\""
   (save-match-data
     (when (string-match dom-select-id-regexp string)
-      (intern (match-string 1 string)))))
+      (match-string 1 string))))
 
 (defsubst dom-select--extract-classes (string)
   "Extract classes from STRING.
@@ -147,7 +147,7 @@ Example:
 Example:
 
   (dom-select--extract-classes \"div.foo.bar\")
-  ;; => (foo bar)"
+  ;; => (\"bar\" \"foo\")"
   (save-match-data
     (let ((pos 0)
           matches)
@@ -162,21 +162,16 @@ Example:
 Example:
 
   (dom-select--extract-attrs \"div[foo=1][bar=2]\")
-  ;; => ((bar string= \"2\") (foo string= \"1\"))"
+  ;; => ((bar \"=\" \"2\") (foo \"=\" \"1\"))"
   (save-match-data
     (let ((pos 0)
           matches)
       (while (string-match dom-select-attr-regexp string pos)
-        (push (list (intern (match-string 1 string))
-                    (pcase-exhaustive (match-string 2 string)
-                      ("="  #'string=)
-                      ("^=" #'string-prefix-p)
-                      ("|=" #'dom-select--s-equal-or-startwith-p)
-                      ("~=" #'dom-select--s-contains-word-p)
-                      ("*=" #'string-match-p)
-                      ("$=" #'string-suffix-p))
-                    (match-string 3 string))
-              matches)
+        (push
+         (list (intern (match-string 1 string))
+               (match-string 2 string)
+               (match-string 3 string))
+         matches)
         (setq pos (match-end 0)))
       matches)))
 
@@ -197,21 +192,21 @@ Example:
   (dom-select--parse-selector \"div#foo.bar[attr1=aaa][attr2=bbb]\")
   ;; =>
   ;; ((tag div)
-  ;;  (id foo)
-  ;;  (class string-match-p \"\\_<bar\\_>\")
-  ;;  (attr1 string= \"aaa\")
-  ;;  (attr2 string= \"bbb\"))"
+  ;;  (id \"foo\")
+  ;;  (class \"bar\")
+  ;;  (attr1 \"=\" \"aaa\")
+  ;;  (attr2 \"=\" \"bbb\"))"
   (let ((tag (dom-select--extract-tag string))
         (id (dom-select--extract-id string))
         (attrs  (dom-select--extract-attrs string))
         (classes (mapcar
                   (lambda (class)
-                    (list 'class 'string-match-p (concat "\\_<" class "\\_>")))
+                    (list 'class class))
                   (dom-select--extract-classes string))))
     (remove nil (append `(,(when tag (list 'tag tag))
                           ,(when id (list 'id id))
                           ,@(when classes classes))
-                        attrs))))
+                        (reverse attrs)))))
 
 (defsubst dom-select--split-selector (string)
   "Split selector STRING.
@@ -238,20 +233,31 @@ Return a string list in the form of (current axis rest), for example:
       (list string))))
 
 
-;;; Combinator functions
+;;; Select elements
 
-(defun dom-select--attr-partial (attr)
-  "Return a function accepts a dom node as parameter.
-When called, the returned function calls `dom-attr' with node and ATTR."
-  (lambda (&rest node)
-    (or (dom-attr node attr) "")))
+(defsubst dom-select--node-match-p (node pred)
+  "Return t if NODE satisfying PRED."
+  (pcase-exhaustive pred
+    (`(tag ,tag) (eq tag (car node)))
+    (`(id ,id) (string= id (dom-attr node 'id)))
+    (`(class ,class) (dom-select--s-contains-word-p class (dom-attr node 'class)))
+    (`(,attr ,op ,pattern)
+     (funcall (pcase-exhaustive op
+                ("="  #'string=)
+                ("*=" #'string-match-p)
+                ("|=" #'dom-select--s-equal-or-startwith-p)
+                ("~=" #'dom-select--s-contains-word-p)
+                ("^=" #'string-prefix-p)
+                ("$=" #'string-suffix-p))
+              pattern
+              (dom-attr node attr)))))
 
 (defun dom-select--current (node preds)
   "Return current NODE if the PREDS return non-nil."
   (catch 'break
-    (mapc (pcase-lambda (`(,pred ,match ,partial))
+    (mapc (lambda (pred)
             (when (not (and (consp node)
-                            (funcall pred match (funcall partial node))))
+                            (dom-select--node-match-p node pred)))
               (throw 'break nil)))
           preds)
     node))
@@ -260,15 +266,15 @@ When called, the returned function calls `dom-attr' with node and ATTR."
   "Return children from PARENT node.
 PREDS is in the form of ((pred match partial) ...), for example:
 
-  `((eq li car)
-    (string=  \"foo\" ,(dom-select--attr-partial 'class)))"
+  `((tag li)
+    (class \"foo\"))"
   (remove nil
           (mapcar
            (lambda (node)
              (catch 'break
-               (mapc (pcase-lambda (`(,pred ,match ,partial))
+               (mapc (lambda (pred)
                        (when (not (and (consp node)
-                                       (funcall pred match (funcall partial node))))
+                                       (dom-select--node-match-p node pred)))
                          (throw 'break nil)))
                      preds)
                node))
@@ -282,13 +288,13 @@ PREDS is in the form of ((pred match partial) ...), for example:
   "Return descendant from PARENT node.
 PREDS is in the form of ((pred match partial) ...), for example:
 
-  `((eq li car)
-    (string=  \"foo\" ,(dom-select--attr-partial 'class)))"
+  `((tag li)
+    (class \"foo\"))"
   (dom-select--search parent
               (lambda (node)
                 (catch 'break
-                  (mapc (pcase-lambda (`(,pred ,match ,partial))
-                          (unless (funcall pred match (funcall partial node))
+                  (mapc (lambda (pred)
+                          (unless (dom-select--node-match-p node pred)
                             (throw 'break nil)))
                         preds)
                   node))))
@@ -350,27 +356,16 @@ Example:
 
   (dom-select dom \"ul.class[attr^=prefix] > li ~ li\")"
   (let ((init-axis (or init-axis 'descendant))
-        selector-cons
         rest-selectors
         next-axis
         preds
         dom-result)
     (pcase (dom-select--split-selector selectors)
       (`(,curr ,axis ,rest)
-       (setq selector-cons (dom-select--parse-selector curr))
+       (setq preds (dom-select--parse-selector curr))
        (setq next-axis (dom-select--convert-axis axis))
        (setq rest-selectors rest))
-      (_ (setq selector-cons (dom-select--parse-selector selectors))))
-    (mapc
-     (lambda (selector)
-       (pcase selector
-         (`(tag ,tag)
-          (push (list #'eq tag #'car) preds))
-         (`(,attr ,match)
-          (push (list #'string= match (dom-select--attr-partial attr)) preds))
-         (`(,attr ,pred ,match)
-          (push (list pred match (dom-select--attr-partial attr)) preds))))
-     selector-cons)
+      (_ (setq preds (dom-select--parse-selector selectors))))
     (setq dom-result
           (pcase-exhaustive init-axis
             (`current (dom-select--current dom preds))

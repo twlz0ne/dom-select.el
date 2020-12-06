@@ -53,22 +53,22 @@
   )
 
 (ert-deftest dom-select-test-extract-attrs ()
-  (should (equal (dom-select--extract-attrs "tag[foo=bar]")  '((foo string= "bar"))))
-  (should (equal (dom-select--extract-attrs "tag[foo^=bar]") '((foo string-prefix-p "bar"))))
-  (should (equal (dom-select--extract-attrs "tag[foo~=bar]") '((foo dom-select--s-contains-word-p "bar"))))
-  (should (equal (dom-select--extract-attrs "tag[foo|=bar]") '((foo dom-select--s-equal-or-startwith-p "bar"))))
-  (should (equal (dom-select--extract-attrs "tag[foo*=bar]") '((foo string-match-p "bar"))))
-  (should (equal (dom-select--extract-attrs "tag[foo$=bar]") '((foo string-suffix-p "bar"))))
-  (should (equal (dom-select--extract-attrs "tag[attr1=value1][attr2=value2]") '((attr2 string= "value2") (attr1 string= "value1")))))
+  (should (equal (dom-select--extract-attrs "tag[foo=bar]")  '((foo "=" "bar"))))
+  (should (equal (dom-select--extract-attrs "tag[foo^=bar]") '((foo "^=" "bar"))))
+  (should (equal (dom-select--extract-attrs "tag[foo~=bar]") '((foo "~=" "bar"))))
+  (should (equal (dom-select--extract-attrs "tag[foo|=bar]") '((foo "|=" "bar"))))
+  (should (equal (dom-select--extract-attrs "tag[foo*=bar]") '((foo "*=" "bar"))))
+  (should (equal (dom-select--extract-attrs "tag[foo$=bar]") '((foo "$=" "bar"))))
+  (should (equal (dom-select--extract-attrs "tag[attr1=value1][attr2=value2]") '((attr2 "=" "value2") (attr1 "=" "value1")))))
 
 (ert-deftest dom-select-test-parse-class ()
   (should (equal (dom-select--parse-selector ".foo")
-                 '((class string-match-p "\\_<foo\\_>"))))
+                 '((class  "foo"))))
   (should (equal (dom-select--parse-selector "div.foo.bar#foobar")
                  '((tag div)
-                   (id foobar)
-                   (class string-match-p "\\_<bar\\_>")
-                   (class string-match-p "\\_<foo\\_>")))))
+                   (id "foobar")
+                   (class "bar")
+                   (class "foo")))))
 
 
 
