@@ -53,6 +53,7 @@
   )
 
 (ert-deftest dom-select-test-extract-attrs ()
+  (should (equal (dom-select--extract-attrs "tag[foo]")      '((foo))))
   (should (equal (dom-select--extract-attrs "tag[foo=bar]")  '((foo "=" "bar"))))
   (should (equal (dom-select--extract-attrs "tag[foo^=bar]") '((foo "^=" "bar"))))
   (should (equal (dom-select--extract-attrs "tag[foo~=bar]") '((foo "~=" "bar"))))
@@ -161,6 +162,37 @@
                    '((li ((class . "foo")))
                      (li ((class . "foo")))
                      (li ((class . "foo-bar bar"))))))))
+
+(ert-deftest dom-select-test-select-with-empty-attr ()
+  (with-temp-buffer
+    (insert "\
+<ul>
+  <li data=\"foo\">foo</li>
+  <li data=\"bar\">bar</li>
+</ul>")
+    (let ((dom (libxml-parse-html-region (point-min) (point-max))))
+      (--should-eq (dom-select dom "[data]")
+                   '((li ((data . "foo")) "foo")
+                     (li ((data . "bar")) "bar")))))
+
+  (with-temp-buffer
+    (insert "<p disabled> disabled element </p>")
+    (let ((dom (libxml-parse-html-region (point-min) (point-max))))
+      (--should-eq (dom-select dom "[disabled]")
+                   '((p ((disabled . "disabled")) " disabled element ")))))
+
+
+  (with-temp-buffer
+    (insert "<p foo> custom attribute </p>")
+    (let ((dom (libxml-parse-html-region (point-min) (point-max))))
+      (--should-eq (dom-select dom "[disabled]")
+                   nil)))
+
+  (with-temp-buffer
+    (insert "<p disabled> disabled element </p>")
+    (let ((dom (libxml-parse-xml-region (point-min) (point-max))))
+      (--should-eq (dom-select dom "[disabled]")
+                   nil))))
 
 (provide 'dom-select-test)
 

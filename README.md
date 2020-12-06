@@ -31,6 +31,7 @@ Supported selectors and combinators:
 | `.class1.class2`      | `.name1.name2`     | Select all elements with both `name1` and `name2` set within its class attribute |
 | `#id`                 | `#firstname`       | Select all elements with `id="firstname"`                                        |
 | `tag`                 | `p`                | Select all `<p>` elements                                                        |
+| `[attr]`              | `[target]`         | Selects all elements with a `target` attribute                                   |
 | `[attr=fullstring]`   | `[target=_blank]`  | Select all elements with `target="_blank"`                                       |
 | `[attr\|=prefix]`     | `[lang\|=en]`      | Select all elements with a lang attribute value equals "en" or starts with "en-" |
 | `[attr~=word]`        | `[title~=flower]`  | Select all elements with title attribute containing the word "flower"            |

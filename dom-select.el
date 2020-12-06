@@ -53,6 +53,7 @@
 ;; | `.class1.class2`      | `.name1.name2`     | Select all elements with both `name1` and `name2` set within its class attribute |
 ;; | `#id`                 | `#firstname`       | Select all elements with `id="firstname"`                                        |
 ;; | `tag`                 | `p`                | Select all `<p>` elements                                                        |
+;; | `[attr]`              | `[target]`         | Selects all elements with a `target` attribute                                   |
 ;; | `[attr=fullstring]`   | `[target=_blank]`  | Select all elements with `target="_blank"`                                       |
 ;; | `[attr|=prefix]`      | `[lang|=en]`       | Select all elements with a lang attribute value equals "en" or starts with "en-" |
 ;; | `[attr~=word]`        | `[title~=flower]`  | Select all elements with title attribute containing the word "flower"            |
@@ -85,7 +86,11 @@
 (defconst dom-select-tag-regexp "^[A-Za-z0-9\-_]+")
 (defconst dom-select-id-regexp "#\\([A-Za-z0-9\-_]+\\)")
 (defconst dom-select-class-regexp "\\.\\([A-Za-z0-9\-_]+\\)")
-(defconst dom-select-attr-regexp "\\[\\([A-Za-z0-9\-_]+\\)\\([\\^\|~\\*$]?=\\)\\(.+?\\)\\]")
+(defconst dom-select-attr-regexp (concat
+                                  "\\[\\([A-Za-z0-9\-_]+\\)\\(?:" ;; attr
+                                  "\\([\\^\|~\\*$]?=\\)"          ;; op
+                                  "\\(.+?\\)"                     ;; value
+                                  "\\)?]"))
 
 
 ;;; Utils & Polyfills
@@ -168,9 +173,11 @@ Example:
           matches)
       (while (string-match dom-select-attr-regexp string pos)
         (push
-         (list (intern (match-string 1 string))
-               (match-string 2 string)
-               (match-string 3 string))
+         (pcase-exhaustive (list (intern (match-string 1 string))
+                                 (match-string 2 string)
+                                 (match-string 3 string))
+           (`(,attr nil nil) (list attr))
+           (`(,attr ,op ,value) (list attr op value)))
          matches)
         (setq pos (match-end 0)))
       matches)))
@@ -241,7 +248,8 @@ Return a string list in the form of (current axis rest), for example:
     (`(tag ,tag) (eq tag (car node)))
     (`(id ,id) (string= id (dom-attr node 'id)))
     (`(class ,class) (dom-select--s-contains-word-p class (dom-attr node 'class)))
-    (`(,attr ,op ,pattern)
+    (`(,attr) (and (dom-attr node attr) t)) ;; [attr]
+    (`(,attr ,op ,pattern)                  ;; [attr?=val]
      (funcall (pcase-exhaustive op
                 ("="  #'string=)
                 ("*=" #'string-match-p)
