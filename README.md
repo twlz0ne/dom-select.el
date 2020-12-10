@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/twlz0ne/dom-select.el.svg?branch=master)](https://travis-ci.com/twlz0ne/dom-select.el)
+[![Build Status](https://travis-ci.com/twlz0ne/dom-select.el.svg?branch=main)](https://travis-ci.com/twlz0ne/dom-select.el)
 
 # dom-select.el
 
