@@ -181,13 +181,13 @@
       (--should-eq (dom-select dom "[disabled]")
                    '((p ((disabled . "disabled")) " disabled element ")))))
 
-
   (with-temp-buffer
     (insert "<p foo> custom attribute </p>")
     (let ((dom (libxml-parse-html-region (point-min) (point-max))))
-      (--should-eq (dom-select dom "[disabled]")
+      (--should-eq (dom-select dom "[foo]")
                    nil)))
 
+  ;; XML document
   (with-temp-buffer
     (insert "<p disabled> disabled element </p>")
     (let ((dom (libxml-parse-xml-region (point-min) (point-max))))
