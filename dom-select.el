@@ -95,15 +95,22 @@
 
 ;;; Utils & Polyfills
 
+(defsubst dom-select--s-contains-p (substring string)
+  "Return non-nil if SUBSTRING contained in STRING."
+  (when (and substring string)
+    (string-match-p substring string)))
+
 (defsubst dom-select--s-contains-word-p (word string)
   "Return non-nil if whole WORD contained in STRING."
-  (string-match-p (concat "\\_<" word "\\_>") string))
+  (when (and word string)
+    (string-match-p (concat "\\_<" word "\\_>") string)))
 
 (defsubst dom-select--s-equal-or-startwith-p (word string)
   "Return non-nil if STRING equals WORD.
 
 or starts with WORD followed by a hyphen (-)."
-  (string-match-p (concat "^" word "\\(?:\\-\\|$\\)") string))
+  (when (and word string)
+    (string-match-p (concat "^" word "\\(?:\\-\\|$\\)") string)))
 
 (defalias 'dom-select--search
   (if (fboundp 'dom-search) 'dom-search
@@ -252,7 +259,7 @@ Return a string list in the form of (current axis rest), for example:
     (`(,attr ,op ,pattern)                  ;; [attr?=val]
      (funcall (pcase-exhaustive op
                 ("="  #'string=)
-                ("*=" #'string-match-p)
+                ("*=" #'dom-select--s-contains-p)
                 ("|=" #'dom-select--s-equal-or-startwith-p)
                 ("~=" #'dom-select--s-contains-word-p)
                 ("^=" #'string-prefix-p)
