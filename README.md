@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/twlz0ne/dom-select.el.svg?branch=main)](https://travis-ci.com/twlz0ne/dom-select.el)
+[![CI](https://github.com/twlz0ne/dom-select.el/workflows/CI/badge.svg)](https://github.com/twlz0ne/dom-select.el/actions?query=workflow%3ACI)
 
 # dom-select.el
 
